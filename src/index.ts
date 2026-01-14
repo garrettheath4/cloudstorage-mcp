@@ -54,7 +54,15 @@ function getStorageClientForProject(projectId: string): Storage {
 // Initialize Storage client for each project
 for (const project of projects) {
     try {
-        // Construct key path based on project ID
+        // If GOOGLE_APPLICATION_CREDENTIALS is set, use Application Default Credentials
+        // (the Storage library reads the file automatically)
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+            storageClients[project] = new Storage({ projectId: project });
+            console.error(`Storage client initialized for project: ${project} (using GOOGLE_APPLICATION_CREDENTIALS)`);
+            continue;
+        }
+        
+        // Otherwise, fall back to keys/ directory for backwards compatibility
         const keyPath = path.resolve(keysDir, `${project}.json`);
         
         if (!fs.existsSync(keyPath)) {
@@ -71,9 +79,9 @@ for (const project of projects) {
             credentials: serviceAccount
         });
         
-        console.error(`Google Cloud Storage client initialized successfully for project: ${project}`);
+        console.error(`Storage client initialized for project: ${project} (using keys/ directory)`);
     } catch (error) {
-        console.error(`Error initializing Google Cloud Storage client for project ${project}:`, error);
+        console.error(`Error initializing Storage client for project ${project}:`, error);
     }
 }
 
